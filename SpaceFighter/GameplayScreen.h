@@ -20,7 +20,7 @@ public:
 	/** @brief Instantiate a gameplay screen object.
 		@param levelIndex The index of the level to load. */
 	GameplayScreen(const int levelIndex = 0);
-	virtual ~GameplayScreen() { }
+	virtual ~GameplayScreen() {}
 
 	/** @brief Load the content for the screen.
 		@param resourceManager A reference to the game's resource manager. */
@@ -41,6 +41,11 @@ public:
 	/** @brief Load a specific level.
 		@param levelIndex The index of the level to load. */
 	virtual void LoadLevel(const int levelIndex);
+
+	//Add
+	virtual int GetCurrentLevelIndex() const { return m_levelIndex; }
+
+
 
 
 private:

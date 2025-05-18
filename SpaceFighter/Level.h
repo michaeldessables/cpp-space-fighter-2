@@ -26,7 +26,7 @@ public:
 	virtual void LoadContent(ResourceManager& resourceManager);
 
 	/** @brief Unload the content for the level. */
-	virtual void UnloadContent() { };
+	virtual void UnloadContent() {};
 
 	/** @brief Handle input for the level.
 		@param input The current state of all player input devices. */
@@ -70,6 +70,16 @@ public:
 		@return True if the screen is transitioning. */
 	virtual bool IsScreenTransitioning() const { return GetAlpha() < 1; }
 
+	// Added
+	virtual int GetEnemyKills() const { return m_enemyKills; }
+	virtual void IncrementEnemyKills() { m_enemyKills++; }
+	virtual int GetKillGoal() const { return m_killGoal; }
+	virtual void SetKillGoal(int goal) { m_killGoal = goal; }
+	virtual void ResetEnemyKills() { m_enemyKills = 0; }
+	virtual void SetCurrentLevelIndex(int index) { m_currentLevelIndex = index; }
+	virtual int GetCurrentLevelIndex() const { return m_currentLevelIndex; }
+	virtual bool AreAllEnemiesInactive() const;
+
 	/** @brief Get a pointer to the closest object of a specific type.
 		@param position The position to check from.
 		@param range The maximum range to check.
@@ -105,9 +115,10 @@ public:
 				}
 			}
 		}
-
+	
 		return pClosest;
 	}
+
 
 
 protected:
@@ -128,9 +139,16 @@ protected:
 		@return A pointer to the audio sample to play. */
 	virtual AudioSample* GetBackgroundAudio() { return m_pAudio; }
 
+	// Added
+	int m_enemyKills = 0;
+	int m_killGoal = 0;
+	//int m_currentLevelIndex = 0;
+	bool m_allEnemiesSpawned = false;
+
+
 private:
 
-	static std::vector<Explosion *> s_explosions;
+	static std::vector<Explosion*> s_explosions;
 	//std::vector<Explosion *>::iterator m_explosionIt;
 
 	CollisionManager* m_pCollisionManager = nullptr;
@@ -164,4 +182,6 @@ private:
 
 	virtual std::vector<GameObject*>* GetSectors() { return m_pSectors; }
 
+	// Added
+	int m_currentLevelIndex = 0;
 };

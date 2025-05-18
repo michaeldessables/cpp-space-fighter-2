@@ -32,6 +32,7 @@ void GameplayScreen::LoadLevel(const int levelIndex)
 
 	m_pLevel->SetGameplayScreen(this);
 	m_pLevel->LoadContent(*m_pResourceManager);
+	m_pLevel->SetCurrentLevelIndex(levelIndex);
 }
 
 void GameplayScreen::HandleInput(const InputState& input)

@@ -9,7 +9,14 @@ void Level01::LoadContent(ResourceManager& resourceManager)
 	// Setup enemy ships
 	Texture *pTexture = resourceManager.Load<Texture>("Textures\\BioEnemyShip.png");
 
-	const int COUNT = 21;
+	m_killGoal = 5;
+
+	const int COUNT = 16;
+
+	//debug
+	std::cout << "Total Enemies Spawned in Level 1: " << COUNT << std::endl;
+	//end
+
 
 	double xPositions[COUNT] =
 	{
@@ -17,7 +24,7 @@ void Level01::LoadContent(ResourceManager& resourceManager)
 		0.75, 0.8, 0.7,
 		0.3, 0.25, 0.35, 0.2, 0.4,
 		0.7, 0.75, 0.65, 0.8, 0.6,
-		0.5, 0.4, 0.6, 0.45, 0.55
+		/*0.5, 0.4, 0.6, 0.45, 0.55*/
 	};
 	
 	double delays[COUNT] =
@@ -26,7 +33,7 @@ void Level01::LoadContent(ResourceManager& resourceManager)
 		3.0, 0.25, 0.25,
 		3.25, 0.25, 0.25, 0.25, 0.25,
 		3.25, 0.25, 0.25, 0.25, 0.25,
-		3.5, 0.3, 0.3, 0.3, 0.3
+		/*3.5, 0.3, 0.3, 0.3, 0.3*/
 	};
 
 	float delay = 3.0; // start delay
@@ -47,6 +54,12 @@ void Level01::LoadContent(ResourceManager& resourceManager)
 	// Setup background
 	SetBackground(resourceManager.Load<Texture>("Textures\\SpaceBackground01.png"));
 
+	//Added 
+	m_allEnemiesSpawned = true;
+	// End
+
 	Level::LoadContent(resourceManager);
+
+
 }
 

@@ -4,26 +4,28 @@
 #include "Blaster.h"
 #include "GameplayScreen.h"
 
-std::vector<Explosion *> Level::s_explosions;
+std::vector<Explosion*> Level::s_explosions;
 
 // Collision Callback Functions
 
 /** brief Callback function for when the player shoots an enemy. */
-void PlayerShootsEnemy(GameObject *pObject1, GameObject *pObject2)
+void PlayerShootsEnemy(GameObject* pObject1, GameObject* pObject2)
 {
 	bool m = pObject1->HasMask(CollisionType::Enemy);
-	EnemyShip *pEnemyShip = (EnemyShip *)((m) ? pObject1 : pObject2);
-	Projectile *pPlayerProjectile = (Projectile *)((!m) ? pObject1 : pObject2);
+	EnemyShip* pEnemyShip = (EnemyShip*)((m) ? pObject1 : pObject2);
+	Projectile* pPlayerProjectile = (Projectile*)((!m) ? pObject1 : pObject2);
+
 	pEnemyShip->Hit(pPlayerProjectile->GetDamage());
 	pPlayerProjectile->Deactivate();
+
 }
 
 /** brief Callback function for when the player collides with an enemy. */
-void PlayerCollidesWithEnemy(GameObject *pObject1, GameObject *pObject2)
+void PlayerCollidesWithEnemy(GameObject* pObject1, GameObject* pObject2)
 {
 	bool m = pObject1->HasMask(CollisionType::Player);
-	PlayerShip *pPlayerShip = (PlayerShip *)((m) ? pObject1 : pObject2);
-	EnemyShip *pEnemyShip = (EnemyShip *)((!m) ? pObject1 : pObject2);
+	PlayerShip* pPlayerShip = (PlayerShip*)((m) ? pObject1 : pObject2);
+	EnemyShip* pEnemyShip = (EnemyShip*)((!m) ? pObject1 : pObject2);
 	pPlayerShip->Hit(std::numeric_limits<float>::max());
 	pEnemyShip->Hit(std::numeric_limits<float>::max());
 }
@@ -39,29 +41,29 @@ Level::Level()
 
 	m_totalSectorCount = m_sectorCount.X * m_sectorCount.Y;
 
-	m_pSectors = new std::vector<GameObject *>[m_totalSectorCount];
+	m_pSectors = new std::vector<GameObject*>[m_totalSectorCount];
 	m_pCollisionManager = new CollisionManager();
-	
+
 	GameObject::SetCurrentLevel(this);
 
 	// Setup player ship
 	m_pPlayerShip = new PlayerShip();
-	Blaster *pBlaster = new Blaster("Main Blaster");
+	Blaster* pBlaster = new Blaster("Main Blaster");
 	pBlaster->SetProjectilePool(&m_projectiles);
 	m_pPlayerShip->AttachItem(pBlaster, Vector2::UNIT_Y * -20);
 
 	for (int i = 0; i < 100; i++)
 	{
-		Projectile *pProjectile = new Projectile();
+		Projectile* pProjectile = new Projectile();
 		m_projectiles.push_back(pProjectile);
 		AddGameObject(pProjectile);
 	}
-	
+
 	m_pPlayerShip->Activate();
 	AddGameObject(m_pPlayerShip);
 
 	// Setup collision types
-	CollisionManager *pC = GetCollisionManager();
+	CollisionManager* pC = GetCollisionManager();
 
 	CollisionType playerShip = (CollisionType::Player | CollisionType::Ship);
 	CollisionType playerProjectile = (CollisionType::Player | CollisionType::Projectile);
@@ -76,7 +78,7 @@ Level::~Level()
 {
 	delete[] m_pSectors;
 	delete m_pCollisionManager;
-	
+
 	m_gameObjectIt = m_gameObjects.begin();
 	for (; m_gameObjectIt != m_gameObjects.end(); m_gameObjectIt++)
 	{
@@ -89,6 +91,11 @@ void Level::LoadContent(ResourceManager& resourceManager)
 {
 	m_pPlayerShip->LoadContent(resourceManager);
 
+	// Added
+	m_allEnemiesSpawned = false;
+	m_enemyKills = 0;  // Reset kill counter if needed
+	// End
+
 	// Setup explosions if they haven't been already
 	Explosion* pExplosion;
 	if (s_explosions.size() == 0) {
@@ -99,7 +106,7 @@ void Level::LoadContent(ResourceManager& resourceManager)
 		for (int i = 0; i < 10; i++)
 		{
 			pExplosion = new Explosion();
-			pExplosion->SetAnimation((Animation *)pAnimation->Clone());
+			pExplosion->SetAnimation((Animation*)pAnimation->Clone());
 			pExplosion->SetSound(pExplosionSound);
 			s_explosions.push_back(pExplosion);
 		}
@@ -125,9 +132,73 @@ void Level::Update(const GameTime& gameTime)
 	m_gameObjectIt = m_gameObjects.begin();
 	for (; m_gameObjectIt != m_gameObjects.end(); m_gameObjectIt++)
 	{
-		GameObject *pGameObject = (*m_gameObjectIt);
+		GameObject* pGameObject = (*m_gameObjectIt);
 		pGameObject->Update(gameTime);
 	}
+
+	// Added
+	for (unsigned int i = 0; i < m_totalSectorCount; i++)
+	{
+		if (m_pSectors[i].size() > 1)
+		{
+			CheckCollisions(m_pSectors[i]);
+		}
+	}
+
+	for (Explosion* pExplosion : s_explosions)
+		pExplosion->Update(gameTime);
+
+
+	bool enemiesRemaining = false;
+	for (GameObject* pGameObject : m_gameObjects)
+	{
+		if (pGameObject->HasMask(CollisionType::Enemy) && pGameObject->IsActive())
+		{
+			enemiesRemaining = true;
+			break;
+		}
+	}
+
+	// Added
+
+	if (m_pPlayerShip->IsActive())
+	{
+		UpdateSectorPosition(m_pPlayerShip);
+	}
+
+	// Check if all enemies are inactive (Added)
+
+	if (!enemiesRemaining)
+	{
+		m_allEnemiesSpawned = true;
+		std::cout << "All enemies have been spawned for Level 1.\n";
+
+		if (m_enemyKills >= m_killGoal)
+		{
+			std::cout << "You Win! Proceed to next level.\n";
+			GetGameplayScreen()->LoadLevel(m_currentLevelIndex + 1);  // Adjust level as needed
+		}
+
+		else if (m_allEnemiesSpawned)
+		{
+			std::cout << "All enemies have been spawned.\n";
+			m_allEnemiesSpawned = true;  // Set to true if all enemies are spawned
+		}
+		else
+		{
+			std::cout << "Not all enemies have been spawned yet.\n";
+		}
+		if (m_enemyKills == m_killGoal)
+		{
+			std::cout << "You Win! Proceed to next level.\n";
+			GetGameplayScreen()->LoadLevel(m_currentLevelIndex + 1);
+			return; // Prevent code execution after this object is deleted
+		}
+	}
+
+
+
+
 
 	for (unsigned int i = 0; i < m_totalSectorCount; i++)
 	{
@@ -136,14 +207,23 @@ void Level::Update(const GameTime& gameTime)
 			CheckCollisions(m_pSectors[i]);
 		}
 	}
-	
-	for (Explosion *pExplosion : s_explosions) pExplosion->Update(gameTime);
 
-	if (!m_pPlayerShip->IsActive()) GetGameplayScreen()->Exit();
+
+	for (Explosion* pExplosion : s_explosions) pExplosion->Update(gameTime);
+
+
+	//Added
+
+	if (m_enemyKills >= m_killGoal)
+	{
+		std::cout << "Level Complete! Moving to the next level...\n";
+		GetGameplayScreen()->LoadLevel(1);
+	}
+	//end
 }
 
 
-void Level::UpdateSectorPosition(GameObject *pGameObject)
+void Level::UpdateSectorPosition(GameObject* pGameObject)
 {
 	Vector2 position = pGameObject->GetPosition();
 	//Vector2 previousPosition = pGameObject->GetPreviousPosition();
@@ -178,9 +258,9 @@ void Level::UpdateSectorPosition(GameObject *pGameObject)
 }
 
 
-void Level::SpawnExplosion(GameObject *pExplodingObject)
+void Level::SpawnExplosion(GameObject* pExplodingObject)
 {
-	Explosion *pExplosion = nullptr;
+	Explosion* pExplosion = nullptr;
 
 	for (unsigned int i = 0; i < s_explosions.size(); i++)
 	{
@@ -208,11 +288,11 @@ float Level::GetAlpha() const
 }
 
 
-void Level::CheckCollisions(std::vector<GameObject *> &gameObjects)
+void Level::CheckCollisions(std::vector<GameObject*>& gameObjects)
 {
 	const unsigned int objectCount = (unsigned int)gameObjects.size();
 
-	GameObject *pFirst, *pSecond;
+	GameObject* pFirst, * pSecond;
 
 	for (unsigned int i = 0; i < objectCount - 1; i++)
 	{
@@ -244,7 +324,7 @@ void Level::Draw(SpriteBatch& spriteBatch)
 	m_gameObjectIt = m_gameObjects.begin();
 	for (; m_gameObjectIt != m_gameObjects.end(); m_gameObjectIt++)
 	{
-		GameObject *pGameObject = (*m_gameObjectIt);
+		GameObject* pGameObject = (*m_gameObjectIt);
 		pGameObject->Draw(spriteBatch);
 	}
 
@@ -254,4 +334,25 @@ void Level::Draw(SpriteBatch& spriteBatch)
 	spriteBatch.Begin(SpriteSortMode::Deferred, BlendState::Additive);
 	for (Explosion* pExplosion : s_explosions) pExplosion->Draw(spriteBatch);
 	spriteBatch.End();
+
+	std::cout << "Enemy Kills: " << m_enemyKills << " / " << m_killGoal << "\n";
+
 }
+
+
+//Added 
+bool Level::AreAllEnemiesInactive() const
+{
+	int activeEnemies = 0;
+	for (const auto& pGameObject : m_gameObjects)
+	{
+		if (pGameObject->IsActive() && pGameObject->HasMask(CollisionType::Enemy))
+		{
+			activeEnemies++;
+		}
+	}
+	std::cout << "Active Enemies Remaining: " << activeEnemies << std::endl;
+	return activeEnemies == 0;
+}
+
+//End
