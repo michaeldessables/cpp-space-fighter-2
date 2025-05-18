@@ -161,9 +161,10 @@ void Level::Update(const GameTime& gameTime)
 
 	// Added
 
-	if (m_pPlayerShip->IsActive())
+	if (!m_pPlayerShip->IsActive())
 	{
-		UpdateSectorPosition(m_pPlayerShip);
+		GetGameplayScreen()->Exit();
+		return; // Stop execution after exit
 	}
 
 	// Check if all enemies are inactive (Added)
@@ -171,12 +172,13 @@ void Level::Update(const GameTime& gameTime)
 	if (!enemiesRemaining)
 	{
 		m_allEnemiesSpawned = true;
-		std::cout << "All enemies have been spawned for Level 1.\n";
+		/*std::cout << "All enemies have been spawned for Level " << m_currentLevelIndex + 1 << ".\n";*/
 
 		if (m_enemyKills >= m_killGoal)
 		{
 			std::cout << "You Win! Proceed to next level.\n";
 			GetGameplayScreen()->LoadLevel(m_currentLevelIndex + 1);  // Adjust level as needed
+			return;
 		}
 
 		else if (m_allEnemiesSpawned)
@@ -190,15 +192,10 @@ void Level::Update(const GameTime& gameTime)
 		}
 		if (m_enemyKills == m_killGoal)
 		{
-			std::cout << "You Win! Proceed to next level.\n";
-			GetGameplayScreen()->LoadLevel(m_currentLevelIndex + 1);
-			return; // Prevent code execution after this object is deleted
+			std::cout << "You Win! Proceed to next level.\n";			
+			GetGameplayScreen()->Exit();
 		}
 	}
-
-
-
-
 
 	for (unsigned int i = 0; i < m_totalSectorCount; i++)
 	{
