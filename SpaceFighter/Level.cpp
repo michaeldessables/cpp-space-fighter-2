@@ -148,6 +148,12 @@ void Level::Update(const GameTime& gameTime)
 	for (Explosion* pExplosion : s_explosions)
 		pExplosion->Update(gameTime);
 
+	if (!m_pPlayerShip->IsActive())
+	{
+		GetGameplayScreen()->Exit();
+		return;
+	}
+
 
 	bool enemiesRemaining = false;
 	for (GameObject* pGameObject : m_gameObjects)
@@ -159,20 +165,11 @@ void Level::Update(const GameTime& gameTime)
 		}
 	}
 
-	// Added
-
-	if (!m_pPlayerShip->IsActive())
-	{
-		GetGameplayScreen()->Exit();
-		return; // Stop execution after exit
-	}
-
 	// Check if all enemies are inactive (Added)
 
 	if (!enemiesRemaining)
 	{
 		m_allEnemiesSpawned = true;
-		/*std::cout << "All enemies have been spawned for Level " << m_currentLevelIndex + 1 << ".\n";*/
 
 		if (m_enemyKills >= m_killGoal)
 		{
@@ -183,16 +180,11 @@ void Level::Update(const GameTime& gameTime)
 
 		else if (m_allEnemiesSpawned)
 		{
-			std::cout << "All enemies have been spawned.\n";
-			m_allEnemiesSpawned = true;  // Set to true if all enemies are spawned
+			std::cout << "You failed to destroy enough enemies. Game Over.\n";
+			m_allEnemiesSpawned = true; // Set to true if all enemies are spawned
 		}
 		else
-		{
-			std::cout << "Not all enemies have been spawned yet.\n";
-		}
-		if (m_enemyKills == m_killGoal)
-		{
-			std::cout << "You Win! Proceed to next level.\n";			
+		{		
 			GetGameplayScreen()->Exit();
 		}
 	}
